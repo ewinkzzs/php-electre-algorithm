@@ -17,11 +17,13 @@ class Electre_algorithm {
 	protected $object;
 	protected $rows;
 	protected $columns;
+	protected $columns_arr;
 
-	public function __construct($object = NULL, $rows = NULL, $columns = NULL) {
+	public function __construct($object = NULL, $columns_arr = NULL, $rows = NULL, $columns = NULL) {
 		$this->object = $object;
 		$this->rows = $rows;
 		$this->columns = $columns;
+		$this->columns_arr = $columns_arr;
 	}
 
 	/* STEP 1
@@ -31,7 +33,8 @@ class Electre_algorithm {
 		// $example = 5 / sqrt(5*5 + 4*4 + 2*2 + 3*3 + 4*4);
 		// $normalization = round($example, 2);
 
-		$columns = [[4,4,5,4], [5,4,4,3], [4,3,2,3], [2,3,4,5,], [3,5,3,2]];
+		// $columns = [[4,4,5,4], [5,4,4,3], [4,3,2,3], [2,3,4,5,], [3,5,3,2]];
+		$columns = $this->columns_arr;
 		$squared_arr = [];
 		$squared_arr_sum = [];
 		
@@ -92,7 +95,7 @@ class Electre_algorithm {
 
 		$weight_normalized_arr;
 		$weight_normalized = array_chunk($weight_normalized_arr, $this->rows);
-
+		
 		return [$weight_normalized, $weight_normalized_arr];
 	}
 
@@ -154,13 +157,75 @@ class Electre_algorithm {
 
 		foreach ($matrix_e_arr as $key => $value) {
 			$index = explode('_', $key);
-			$arr_matrix_e[$key] = $matrix_f[$index[2]][$index[1]] * $matrix_g[$index[2]][$index[1]];
+			$arr_matrix_e[$key] = $matrix_f[$index[1]][$index[2]] * $matrix_g[$index[1]][$index[2]];
 		}
 
 		$matrix_e = $this->get_concordance_discordance_matrix($arr_matrix_e);
 		
 		return [$matrix_e, $arr_matrix_e];
 	}
+
+	/* STEP 7
+	 * elimination alternative less favourable
+	*/
+	public function eliminations($matrix_e, $arr_matrix_e) {
+		/* later will be used
+		for ($row=0; $row <= $this->rows; $row++) {
+			for ($column=0; $column < $this->rows; $column++) { 
+				if ($row == $column) {
+					$table[$row + 1][$column + 1] = '-';
+				} else {
+					$table[$row + 1][$column + 1] = NULL;
+				}
+			}
+		}
+		
+		$arr_list = $table;
+		unset($arr_list[count($table)]);
+		
+		foreach ($arr_matrix_e as $key_object => $value_object) {
+			$index = explode('_', $key_object);
+			$arr_list[$index[1]][$index[2]] = $value_object;
+		}
+		*/
+		
+		foreach ($matrix_e as $key => $value) {
+			$arr_count[$key] = count(array_keys($matrix_e[$key], 1));
+		}
+
+		$arr_eliminate_count = $arr_count;
+		
+		/* later will be use
+		$arr_count = array_diff($arr_count, [0]);
+
+		$i = 0;
+		foreach ($arr_count as $key => $value) {
+			if ($value > $i) {
+				$i = $value;
+				$arr_eliminate = [$key => $arr_count[$key]];
+			}
+		}
+		*/
+
+		return $arr_eliminate_count;
+	}
+
+	public function rating_result($alternative, $arr_eliminate_count) {
+		$i = 1;
+		foreach ($alternative as $key => $value) {
+			$ratings[$key] = $arr_eliminate_count[$i++];
+		}
+
+		arsort($ratings);
+		
+		$number = 1;
+		foreach ($ratings as $key => $value) {
+			$ratings[$key] = $number++;
+		}
+		
+		return $ratings;
+	}
+
 
 	/* INCLUDING OF STEP 3*/
 	protected function concordance($matrix_v, $weight_normalized_arr) {
@@ -289,7 +354,7 @@ class Electre_algorithm {
 	}
 
 	private function _number_format($number) {
-		return number_format($number, 2, '.', '');
+		return number_format($number, 3, '.', '');
 	}
 
 	private function set_pattern_weighting_key($pattern, $object, $column) {
@@ -343,7 +408,7 @@ class Electre_algorithm {
 		
 		foreach ($object as $key_object => $value_object) {
 			$index = explode('_', $key_object);
-			$arr_list[$index[2]][$index[1]] = $value_object;
+			$arr_list[$index[1]][$index[2]] = $value_object;
 		}
 
 		return $arr_list;
